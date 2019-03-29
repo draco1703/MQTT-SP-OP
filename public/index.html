@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>MQTT Client</title>
+</head>
+
+<body>
+	<div>
+		<input id="text" /> <button id="send">send</button>
+	</div>
+	<div id="log">
+
+	</div>
+</body>
+
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+	var socket = io('http://localhost');
+	socket.on('log', function (data) {
+		let msg = document.createElement("P");
+		msg.innerText = data;
+		document.getElementById("log").appendChild(msg);
+	});
+
+	document.getElementById("send").addEventListener("click", () => {
+		socket.emit("send", document.getElementById("text").value);
+	});
+</script>
+
+</html>
