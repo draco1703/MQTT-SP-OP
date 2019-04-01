@@ -45,11 +45,11 @@
 	});
 
 	document.getElementById("on").addEventListener("click", () => {
-		socket.emit("led", "1");
+		socket.emit("led", "on");
 	});
 
 	document.getElementById("off").addEventListener("click", () => {
-		socket.emit("led", "0");
+		socket.emit("led", "off");
 	});
 </script>
 
