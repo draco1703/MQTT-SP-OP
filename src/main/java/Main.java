@@ -8,35 +8,48 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import java.util.Scanner;  // Import the Scanner class
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 
 public class Main {
 
     private static String publisherId = UUID.randomUUID().toString();
     private static IMqttClient client;
+    private static Scanner scanner;
 
     public static void main(String[] args) throws MqttException {
         client = new MqttClient("tcp://207.154.218.89:1883", publisherId);
 
+        client.setCallback(new MqttCallback() {
+            public void connectionLost(Throwable cause) {
+            }
+
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                System.out.println("Server: " + message.toString());
+            }
+
+            public void deliveryComplete(IMqttDeliveryToken token) {
+            }
+        });
+
         clientConnect();
 
-        Scanner scanner = new Scanner(System.in);  // Create a Scanner object<
-        System.out.println("Enter Topic");
+        scanner = new Scanner(System.in);
 
+        System.out.println("Enter Topic");
         String topic = scanner.nextLine();  // Read user input
         System.out.println("Topic is: " + topic);  // Output user input 
 
-        while (true) {
-            System.out.print("Enter your message: ");
-            String message = scanner.nextLine();
-
-            publisher(topic, message);
-        }
-    }
-    
-    private static void clientConnect(){
-        System.out.println("Connecting...");
+        client.subscribe(topic);
         
+        new PublishThread(topic).start();
+    }
+
+    private static void clientConnect() {
+        System.out.println("Connecting...");
+
         while (!client.isConnected()) {
             try {
                 client.connect();
@@ -49,15 +62,26 @@ public class Main {
         System.out.println("\nConnected");
     }
 
-    private static void publisher(String topic, String msg) throws MqttException {
-        MqttMessage message = new MqttMessage(msg.getBytes());
+    public static class PublishThread extends Thread {
 
-        message.setQos(0);
-        message.setRetained(true);
+        public PublishThread(String topic) {
+            super(topic);
+        }
 
-        client.publish(topic, message);
+        public void run() {
+            while (true) {
 
+                MqttMessage message = new MqttMessage(scanner.nextLine().getBytes());
 
+                message.setQos(0);
+                message.setRetained(true);
+
+                try {
+                    client.publish(getName(), message);
+                } catch (MqttException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
-
 }
